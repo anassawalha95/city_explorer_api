@@ -1,18 +1,19 @@
 {
   "name": "city_explorer_api",
   "version": "1.0.0",
-  "description": "city-explorer-api",
+  "description": "**Author**: Anas Sawalha **Version**: 1.0.0 (increment the patch/fix version number if you make more commits past your first submission)",
   "main": "server.js",
   "scripts": {
-    "test": "test",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anassawalha95/city_explorer_api.git"
   },
-  "author": "anas_sawalha",
-  "license": "MIT",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/anassawalha95/city_explorer_api/issues"
   },
