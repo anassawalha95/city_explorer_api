@@ -17,11 +17,11 @@ server.get('/', (req, res) => {
 
 
 
-function Location(geoData) {
-    this.search_query = locationData[0].display_name.split(',')[0];
-    this.formatted_query = geoData[0].display_name;
-    this.latitude = geoData[0].lat;
-    this.longitude = geoData[0].lon;
+function Location(data) {
+    this.search_query = data[0].display_name.split(',')[0];
+    this.formatted_query = data[0].display_name;
+    this.latitude = data[0].lat;
+    this.longitude = data[0].lon;
 
 }
 
@@ -29,32 +29,24 @@ function Location(geoData) {
 server.get('/location', (req, res) => {
     const locationsData = require('./data/location.json');
     const location = new Location(locationsData);
-
     res.send(location);
 });
 
-
-Weather.prototype.forcast = function (data) {
-    let weathers = []
-    data.forEach(datuim => {
-        weathers.push({ "forecast": datuim.weather.description, "time": new Date(datuim.datetime).toDateString() })
-    });
-    return weathers
-}
-
-
-
-function Weather(obj) {
-
-    this.forecast = Weather.prototype.forcast(obj.data)
-
+function Weather(forcast, time) {
+    this.forecast = forcast
+    this.time = time
 }
 
 
 server.get('/weather', (req, res) => {
     const weatherData = require('./data/weather.json');
-    const weather = new Weather(weatherData);
-    res.send(weather);
+    let weathers = []
+    weatherData.data.forEach(datuim => {
+        const weather = new Weather(datuim.weather.description, new Date(datuim.datetime).toDateString());
+        weathers.push(weather)
+    });
+
+    res.send(weathers);
 });
 
 server.use('*', (req, res) => {
