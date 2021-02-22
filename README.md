@@ -13,8 +13,16 @@ This project is build for users to exploar the city's around the world
 
 <!-- What are the steps that a user must take in order to build this app on their own machine and get it running? -->
 
-clone the repo 
-install express, cors, and dotenv
+1. clone the repo 
+
+2. install express, cors, and dotenv
+
+3. get and add  auth key in your .env from GEOCODE_API_KEY  locationiq  website as key value pairs
+
+4. get and add  auth key in your .env from WEATHER_API_KEY  wetharbits website as key value pairs
+
+5. get and add  auth key in your .env from PARKS_API_KEY from  nps website as key value pairs
+
 
 ## Architecture
 
@@ -28,7 +36,12 @@ This app is using vanilla js
 01-01-2001 4:59pm - Application now has a fully-functional express server, with a GET route for the location resource.
  -->
 
-20-02-2021 2:02pm - Application have its files and folders strctured 
+20-02-2021 - Application have its files and folders strctured 
+
+21-02-2021 - added routes
+
+22-02-2021 - added API's and applies dry prinecable 
+
 
 ## Credits and Collaborations
 Thanks to code fellow, LTUC, LTUC lecturer, and LTUC T'As
