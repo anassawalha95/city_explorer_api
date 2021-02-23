@@ -3,12 +3,18 @@
 
 require('dotenv').config();
 
-const express = require('express');
 const cors = require('cors');
+
+const express = require('express');
+
+const server = express();
+
+server.use(cors());
 
 const superAgent = require('superagent');
 
-const server = express();
+
+
 const PORT = process.env.PORT || 3000;
 
 
@@ -18,7 +24,7 @@ server.get('/location', getLocation);
 server.get('/parks', getParks);
 server.get('*', handlingUnknownRoutes);
 server.use(errorHandler)
-server.use(cors());
+
 
 
 let lon
@@ -80,7 +86,7 @@ function getWeather(req, res) {
 
 
 function getParks(req, res) {
-    console.log(city)
+
     let key = process.env.PARKS_API_KEY;
     let url = `https://developer.nps.gov/api/v1/parks?q=${city}&limit=10&api_key=${key}`;
     superAgent.get(url).then(collection => {
