@@ -5,15 +5,11 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+
 const superAgent = require('superagent');
 
 const server = express();
 const PORT = process.env.PORT || 3000;
-server.use(cors());
-
-
-
-
 
 
 server.get('/', homeRoute)
@@ -22,10 +18,12 @@ server.get('/location', getLocation);
 server.get('/parks', getParks);
 server.get('*', handlingUnknownRoutes);
 server.use(errorHandler)
+server.use(cors());
+
 
 let lon
 let lat
-
+let city
 function Location(data) {
     this.search_query = data[0].display_name.split(',')[0];
     this.formatted_query = data[0].display_name;
@@ -44,7 +42,7 @@ function Park(parkName, parkAddress, parkFee, parkDescription, parkUrl) {
 
     this.name = parkName
     this.address = ` ${parkAddress.line1} , ${parkAddress.city} , ${parkAddress.stateCode} , ${parkAddress.postalCode}`
-    this.fee = (parkFee.length > 0 ? parkFee : parseFloat(0))
+    this.fee = (parkFee.length > 0 ? parkFee : "0.0")
     this.description = parkDescription
     this.url = parkUrl
 }
@@ -57,7 +55,7 @@ function homeRoute(req, res) {
 
 
 function getLocation(req, res) {
-    const city = req.query.city
+    city = req.query.city
     let key = process.env.GEOCODE_API_KEY;
     let url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
     superAgent.get(url).then(data => {
@@ -82,10 +80,11 @@ function getWeather(req, res) {
 
 
 function getParks(req, res) {
-
+    console.log(city)
     let key = process.env.PARKS_API_KEY;
-    let url = `https://developer.nps.gov/api/v1/parks?limit=10&api_key=${key}`;
+    let url = `https://developer.nps.gov/api/v1/parks?q=${city}&limit=10&api_key=${key}`;
     superAgent.get(url).then(collection => {
+
         let parks = collection.body.data.map(datuim => {
             return new Park(
                 datuim.fullName,
