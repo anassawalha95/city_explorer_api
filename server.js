@@ -90,10 +90,10 @@ function getLocation(req, res) {
                             .then(result => {
                                 console.log(result);
                                 res.status(200).send(location);
-                            }).catch(errorHandler)
-                    }).catch(errorHandler)
+                            })//.catch(errorHandler)
+                    })//.catch(errorHandler)
             }
-        }).catch(errorHandler)
+        })//.catch(errorHandler)
 
 
 }
