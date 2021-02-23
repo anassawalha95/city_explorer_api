@@ -7,14 +7,17 @@ const cors = require('cors');
 
 const express = require('express');
 
+const pg = require('pg');
+
+
 const server = express();
 
 server.use(cors());
 
 const superAgent = require('superagent');
 
-
-
+// const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const client = new pg.Client(process.env.DATABASE_URL);
 const PORT = process.env.PORT || 3000;
 
 
@@ -26,12 +29,13 @@ server.get('*', handlingUnknownRoutes);
 server.use(errorHandler)
 
 
-
+let c = console
 let lon
 let lat
 let city
-function Location(data) {
-    this.search_query = data[0].display_name.split(',')[0];
+
+function Location(city, data) {
+    this.search_query = city
     this.formatted_query = data[0].display_name;
     this.latitude = data[0].lat;
     this.longitude = data[0].lon;
@@ -64,10 +68,34 @@ function getLocation(req, res) {
     city = req.query.city
     let key = process.env.GEOCODE_API_KEY;
     let url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
-    superAgent.get(url).then(data => {
-        const location = new Location(data.body);
-        res.send(location);
-    }).catch(errorHandler)
+
+    const safeValue = [city];
+    const query = `SELECT * FROM locations WHERE search_query = $1 `
+
+    client.query(query, safeValue)
+        .then(result => {
+
+            if (result.rowCount) {
+                res.status(200).json(result.rows[0]);
+            } else {
+
+                superAgent.get(url)
+                    .then(data => {
+                        // console.log(data.body);
+                        const location = new Location(city, data.body);
+                        const SQL = `INSERT INTO locations (search_query,formatted_query,latitude,longitude) VALUES($1,$2,$3,$4)  RETURNING * ;`
+                        let safeValues = [city, location.formatted_query, location.latitude, location.longitude];
+
+                        client.query(SQL, safeValues)
+                            .then(result => {
+                                console.log(result);
+                                res.status(200).send(location);
+                            }).catch(errorHandler)
+                    }).catch(errorHandler)
+            }
+        }).catch(errorHandler)
+
+
 }
 
 
@@ -122,6 +150,10 @@ function errorHandler(error, req, res) {
 
 
 
-server.listen(PORT, () => {
-    console.log("Listening on port", PORT)
-})
+
+client.connect()
+    .then(() => {
+        server.listen(PORT, () =>
+            console.log(`localhost:${PORT}`)
+        );
+    })
