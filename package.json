@@ -9,7 +9,9 @@
     "express": "^4.17.1",
     "pg": "^8.5.1",
     "postgres": "^1.0.2",
-    "superagent": "^6.1.0"
+    "superagent": "^6.1.0",
+    "yelp": "^1.0.2",
+    "yelp-fusion": "^3.0.0"
   },
   "devDependencies": {},
   "scripts": {

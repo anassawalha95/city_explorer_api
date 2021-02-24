@@ -16,15 +16,19 @@ server.use(cors());
 
 const superAgent = require('superagent');
 
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-//const client = new pg.Client(process.env.DATABASE_URL);
+const yelp = require('yelp-fusion');
+
+//const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const client = new pg.Client(process.env.DATABASE_URL);
 const PORT = process.env.PORT || 3000;
 
 
 server.get('/', homeRoute)
-server.get('/weather', getWeather);
 server.get('/location', getLocation);
+server.get('/weather', getWeather);
 server.get('/parks', getParks);
+server.get('/movies', getMovies);
+server.get('/yelp', getYelp);
 server.get('*', handlingUnknownRoutes);
 server.use(errorHandler)
 
@@ -57,6 +61,25 @@ function Park(parkName, parkAddress, parkFee, parkDescription, parkUrl) {
     this.url = parkUrl
 }
 
+function Movie(movieTitle, movieOverview, movieAvgVotes, movieTotalVotes, movieImageUrl, moviePopularity, movieReleasedOn) {
+
+    this.title = movieTitle
+    this.overview = movieOverview
+    this.average_votes = movieAvgVotes
+    this.total_votes = movieTotalVotes
+    this.image_url = movieImageUrl
+    this.popularity = moviePopularity
+    this.released_on = movieReleasedOn
+}
+
+
+function Yelp(yelpName, yelpImageUrl, yelpPrice, yelpRating, yelpUrl) {
+    this.name = yelpName
+    this.image_url = yelpImageUrl
+    this.price = yelpPrice
+    this.rating = yelpRating
+    this.url = yelpUrl
+}
 
 function homeRoute(req, res) {
     res.status(200).send('welcome');
@@ -81,7 +104,7 @@ function getLocation(req, res) {
 
                 superAgent.get(url)
                     .then(data => {
-                        // console.log(data.body);
+
                         const location = new Location(city, data.body);
                         const SQL = `INSERT INTO locations (search_query,formatted_query,latitude,longitude) VALUES($1,$2,$3,$4)  RETURNING * ;`
                         let safeValues = [city, location.formatted_query, location.latitude, location.longitude];
@@ -90,10 +113,10 @@ function getLocation(req, res) {
                             .then(result => {
                                 console.log(result);
                                 res.status(200).send(location);
-                            }).catch(errorHandler)
-                    }).catch(errorHandler)
+                            })//.catch(errorHandler)
+                    })//.catch(errorHandler)
             }
-        }).catch(errorHandler)
+        })//.catch(errorHandler)
 
 
 }
@@ -102,14 +125,14 @@ function getLocation(req, res) {
 
 function getWeather(req, res) {
 
-    let key = process.env.WEATHER_API_KEY;
-    let url = `http://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
+    const key = process.env.WEATHER_API_KEY;
+    let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
     superAgent.get(url).then(collection => {
         let forcastData = collection.body.data.map(datuim => {
             return new Weather(datuim.weather.description, new Date(datuim.datetime).toDateString());
         });
-        res.send(forcastData);
-    }).catch(errorHandler)
+        res.status(200).send(forcastData);
+    })//.catch(errorHandler)
 }
 
 
@@ -128,7 +151,79 @@ function getParks(req, res) {
                 datuim.url);
         });
         res.send(parks);
-    }).catch(errorHandler)
+    })//.catch(errorHandler)
+}
+
+
+function getMovies(req, res) {
+
+    const key = process.env.MOVIE_API_KEY;
+    let url = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${city}`;
+
+    superAgent.get(url)
+        .then(collection => {
+            let movies = collection.body.results.map(datuim => {
+
+                return new Movie(datuim.title,
+                    datuim.overview,
+                    datuim.vote_average,
+                    datuim.vote_count,
+                    datuim.poster_path,
+                    datuim.popularity,
+                    datuim.release_date);
+            });
+            res.status(200).send(movies);
+        })//.catch(errorHandler)
+}
+
+
+function getYelp(req, res) {
+    let page = 1 //req.query.page
+    const key = process.env.YELP_API_KEY;
+    let numPerPage = 5
+    let start = ((page - 1) * numPerPage + 1)
+    let url = `https://api.yelp.com/v3/businesses/search?term=businesses&location=${city}&offset=${start},`;
+
+    superAgent.get(url)
+        .then(collection => {
+            // let nbus = collection.body.results.map(datuim => {
+
+            //     return new Movie(datuim.title,
+            //         datuim.overview,
+            //         datuim.vote_average,
+            //         datuim.vote_count,
+            //         datuim.poster_path,
+            //         datuim.popularity,
+            //         datuim.release_date);
+            // });
+
+            c.log(collection)
+            res.status(200).send(collection);
+        }).catch(errorHandler())
+
+
+
+    // const client = yelp.client(key);
+    // let numPerPage = 5
+    // let start = ((page - 1) * numPerPage + 1)
+    // const searchRequest = {
+    //     term: 'businesses',
+    //     location: "seattle",
+    //     limit: numPerPage,
+    //     offset: start
+    // };
+
+
+
+    // client.search(searchRequest)
+    //     .then((response) => {
+    //         // c.log(response.body)
+    //         res.send(response.body.businesses)
+    //         //console.log(response.jsonBody);
+    //     })
+    //     .catch((error) => {
+    //         console.log(error);
+    //     });
 }
 
 
@@ -140,12 +235,8 @@ function handlingUnknownRoutes(req, res) {
     res.status(404).send(errorObject);
 }
 
-function errorHandler(error, req, res) {
-    const errorObject = {
-        status: '500',
-        responseText: "Sorry, something went wrong"
-    }
-    res.status(500).send(errorObject);
+function errorHandler(req, res) {
+    res.status(500).send(error);
 }
 
 
@@ -153,7 +244,10 @@ function errorHandler(error, req, res) {
 
 client.connect()
     .then(() => {
-        server.listen(PORT, () =>
-            console.log(`localhost:${PORT}`)
+        server.listen(PORT, () => {
+            console.log(`http://localhost:${PORT}`)
+
+            console.log(`http://localhost:${PORT}/yelp`)
+        }
         );
     })
