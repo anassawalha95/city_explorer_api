@@ -189,7 +189,8 @@ function getYelp(req, res, next) {
         .set(authorization)
         .then(collection => {
             let yelpData = collection.body.businesses.map(datuim => {
-                return new Yelp(datuim.title,
+                return new Yelp(
+
                     datuim.name,
                     datuim.image_url,
                     datuim.price,
