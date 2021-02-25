@@ -16,7 +16,7 @@ server.use(cors());
 
 const superAgent = require('superagent');
 
-const yelp = require('yelp-fusion');
+
 
 //const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const client = new pg.Client(process.env.DATABASE_URL);
@@ -81,13 +81,13 @@ function Yelp(yelpName, yelpImageUrl, yelpPrice, yelpRating, yelpUrl) {
     this.url = yelpUrl
 }
 
-function homeRoute(req, res) {
+function homeRoute(req, res, next) {
     res.status(200).send('welcome');
 }
 
 
 
-function getLocation(req, res) {
+function getLocation(req, res, next) {
     city = req.query.city
     let key = process.env.GEOCODE_API_KEY;
     let url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
@@ -116,14 +116,14 @@ function getLocation(req, res) {
                             })//.catch(errorHandler)
                     })//.catch(errorHandler)
             }
-        })//.catch(errorHandler)
+        }).catch(next)
 
 
 }
 
 
 
-function getWeather(req, res) {
+function getWeather(req, res, next) {
 
     const key = process.env.WEATHER_API_KEY;
     let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
@@ -132,11 +132,11 @@ function getWeather(req, res) {
             return new Weather(datuim.weather.description, new Date(datuim.datetime).toDateString());
         });
         res.status(200).send(forcastData);
-    })//.catch(errorHandler)
+    }).catch(next)
 }
 
 
-function getParks(req, res) {
+function getParks(req, res, next) {
 
     let key = process.env.PARKS_API_KEY;
     let url = `https://developer.nps.gov/api/v1/parks?q=${city}&limit=10&api_key=${key}`;
@@ -151,11 +151,11 @@ function getParks(req, res) {
                 datuim.url);
         });
         res.send(parks);
-    })//.catch(errorHandler)
+    }).catch(next)
 }
 
 
-function getMovies(req, res) {
+function getMovies(req, res, next) {
 
     const key = process.env.MOVIE_API_KEY;
     let url = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${city}`;
@@ -173,57 +173,34 @@ function getMovies(req, res) {
                     datuim.release_date);
             });
             res.status(200).send(movies);
-        })//.catch(errorHandler)
+        }).catch(next)
 }
 
-
-function getYelp(req, res) {
-    let page = 1 //req.query.page
+// (yelpName, yelpImageUrl, yelpPrice, yelpRating, yelpUrl)
+function getYelp(req, res, next) {
+    let page = req.query.page
     const key = process.env.YELP_API_KEY;
     let numPerPage = 5
     let start = ((page - 1) * numPerPage + 1)
-    let url = `https://api.yelp.com/v3/businesses/search?term=businesses&location=${city}&offset=${start},`;
-
+    let url = `https://api.yelp.com/v3/businesses/search?term=businesses&location=${city}&offset=${start}&limit=${numPerPage} `;
+    const authorization = { 'Authorization': `Bearer ${key}` }
     superAgent.get(url)
+        .set(authorization)
         .then(collection => {
-            // let nbus = collection.body.results.map(datuim => {
-
-            //     return new Movie(datuim.title,
-            //         datuim.overview,
-            //         datuim.vote_average,
-            //         datuim.vote_count,
-            //         datuim.poster_path,
-            //         datuim.popularity,
-            //         datuim.release_date);
-            // });
-
-            c.log(collection)
-            res.status(200).send(collection);
-        }).catch(errorHandler())
+            let yelpData = collection.body.businesses.map(datuim => {
+                return new Yelp(datuim.title,
+                    datuim.name,
+                    datuim.image_url,
+                    datuim.price,
+                    datuim.rating,
+                    datuim.url
+                );
+            });
 
 
+            res.status(200).send(yelpData);
+        }).catch(next)
 
-    // const client = yelp.client(key);
-    // let numPerPage = 5
-    // let start = ((page - 1) * numPerPage + 1)
-    // const searchRequest = {
-    //     term: 'businesses',
-    //     location: "seattle",
-    //     limit: numPerPage,
-    //     offset: start
-    // };
-
-
-
-    // client.search(searchRequest)
-    //     .then((response) => {
-    //         // c.log(response.body)
-    //         res.send(response.body.businesses)
-    //         //console.log(response.jsonBody);
-    //     })
-    //     .catch((error) => {
-    //         console.log(error);
-    //     });
 }
 
 
@@ -235,8 +212,8 @@ function handlingUnknownRoutes(req, res) {
     res.status(404).send(errorObject);
 }
 
-function errorHandler(req, res) {
-    res.status(500).send(error);
+function errorHandler(error, req, res, next) {
+    res.status(500).send(JSON.parse(error.response.text));
 }
 
 
