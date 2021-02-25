@@ -18,8 +18,8 @@ const superAgent = require('superagent');
 
 
 
-//const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-const client = new pg.Client(process.env.DATABASE_URL);
+const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+//const client = new pg.Client(process.env.DATABASE_URL);
 const PORT = process.env.PORT || 3000;
 
 
@@ -34,8 +34,8 @@ server.use(errorHandler)
 
 
 let c = console
-let lon
-let lat
+let lon = 0
+let lat = 0
 let city
 
 function Location(city, data) {
@@ -113,8 +113,8 @@ function getLocation(req, res, next) {
                             .then(result => {
                                 console.log(result);
                                 res.status(200).send(location);
-                            })//.catch(errorHandler)
-                    })//.catch(errorHandler)
+                            }).catch(next)
+                    }).catch(next)
             }
         }).catch(next)
 
@@ -124,6 +124,7 @@ function getLocation(req, res, next) {
 
 
 function getWeather(req, res, next) {
+
 
     const key = process.env.WEATHER_API_KEY;
     let url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
